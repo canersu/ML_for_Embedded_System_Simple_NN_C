@@ -215,7 +215,6 @@ void main(void) {
 	/*compute yhat*/
 	vector_sigmoid(z2[0],yhat_eg, NUM_OF_OUT_NODES);
 	printf("predicted:  %f\n\r", yhat_eg[0]);
-	printf("here");
 
 }
 

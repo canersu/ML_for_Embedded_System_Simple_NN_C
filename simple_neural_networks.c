@@ -246,7 +246,7 @@ void linear_backward(uint32_t LAYER_LEN, uint32_t PREV_LAYER_LEN, uint32_t m, do
 //	}
 	matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, (double) 1/m, dZ, db);
 	//matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, 1/m, A_prev, A_prev);
-	matrix_matrix_multiplication(LAYER_LEN, PREV_LAYER_LEN, PREV_LAYER_LEN, dZ, A_prev, dW);
+	matrix_matrix_multiplication(LAYER_LEN, 1, PREV_LAYER_LEN, dZ, A_prev, dW);
 	//matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, 0.33, dZ, dZ);
 }
 
