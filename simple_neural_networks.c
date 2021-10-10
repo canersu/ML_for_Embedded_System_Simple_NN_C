@@ -155,6 +155,7 @@ double compute_cost(uint32_t m, double yhat[m][1], double y[m][1]) {
 	for(int i=0; i<m; ++i)
 	{
 		cost += ((y[i][0]*log(yhat[i][0])) + ((1-y[i][0])*(log(1-yhat[i][0]))));
+		printf("cost function %d is %f \n", i,cost);
 	}
 	cost = -1*cost/m;
 

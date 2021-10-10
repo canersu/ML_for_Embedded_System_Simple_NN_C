@@ -18,68 +18,113 @@
 
 // Size of the layers
 #define NUM_OF_FEATURES   	3  	// input values
-#define NUM_OF_HID1_NODES	3
+#define NUM_OF_HID1_NODES	5
+#define NUM_OF_HID2_NODES	4
 #define NUM_OF_OUT_NODES	1	// output classes
+#define NUM_SAMPLES         10
 
 double learning_rate=0.01;
 
 /*Input layer to hidden layer*/
-double a1[1][NUM_OF_HID1_NODES];	// activation function
+double a1[NUM_SAMPLES][NUM_OF_HID1_NODES];	// activation function
 double b1[NUM_OF_HID1_NODES];		// bias
-double z1[1][NUM_OF_HID1_NODES];	// output vector
+double z1[NUM_SAMPLES][NUM_OF_HID1_NODES];	// output vector
 
-// Input layer to hidden layer weight matrix
-double w1[NUM_OF_HID1_NODES][NUM_OF_FEATURES] =    {{0.25, 0.5,   0.05},   	 //hid[0]
-													{0.8,  0.82,  0.3 },     //hid[1]
-													{0.5,  0.45,  0.19}};   //hid[2]
+// Input layer to hidden layer1 weight matrix
+double w1[NUM_OF_HID1_NODES][NUM_OF_FEATURES];;
+
 
 /*Hidden layer to output layer*/
-double b2[NUM_OF_OUT_NODES];
-double z2[1][NUM_OF_OUT_NODES];	// Predicted output vector
+double a2[NUM_SAMPLES][NUM_OF_HID2_NODES];	// activation function
+double b2[NUM_OF_HID2_NODES];
+double z2[NUM_SAMPLES][NUM_OF_HID2_NODES];	// Predicted output vector
 
 // Hidden layer to output layer weight matrix
-double w2[NUM_OF_OUT_NODES][NUM_OF_HID1_NODES] =    {{0.48, 0.73, 0.03}};
+double w2[NUM_OF_HID1_NODES][NUM_OF_HID2_NODES];
+
+
+/*Hidden layer to output layer*/
+double b3[NUM_OF_OUT_NODES];
+double z3[NUM_SAMPLES][NUM_OF_OUT_NODES];	// Predicted output vector
+
+// Hidden layer to output layer weight matrix
+double w3[NUM_OF_HID2_NODES][NUM_OF_OUT_NODES];
 
 // Predicted values
-double yhat[1][NUM_OF_OUT_NODES];
+double yhat[NUM_SAMPLES][NUM_OF_OUT_NODES];
 double yhat_eg[NUM_OF_OUT_NODES];	// Predicted yhat
 
 // Training data
-double train_x[1][NUM_OF_FEATURES];				// Training data after normalization
-double train_y[1][NUM_OF_OUT_NODES] = {{1}};  	// The expected (training) y values
+double train_x[NUM_SAMPLES][NUM_OF_FEATURES];				// Training data after normalization
+double train_y[NUM_SAMPLES][NUM_OF_OUT_NODES] = {{1,1,1,0,1,0,0,0,0,1}};  	// The expected (training) y values
 
 
 void main(void) {
 	// Raw training data
 
-	double raw_x[1][NUM_OF_FEATURES] = {{23.0, 40.0, 100.0}};	// temp, hum, air_q input values,
+	double raw_x[10][NUM_OF_FEATURES] = {{23.0, 40.0, 100.0},	// temp, hum, air_q input values,
+										 {15.0, 60.0, 10.0},
+										 {2.0,  35.0, 30.0},
+										 {30.0, 52.0, 180.0},
+										 {22.0, 95.0, 70.0},
+										 {35.0, 97.0, 400.0},
+										 {60.0, 20.0, 200.0},
+										 {85.0, 50.0, 90.0},
+										 {27.0, 0.0,  300.0},
+										 {17.0, 70.0, 20.0}};
 
-
-	normalize_data_2d(NUM_OF_FEATURES,1, raw_x, train_x);	// Data normalization
+	normalize_data_2d(NUM_OF_FEATURES,NUM_SAMPLES, raw_x, train_x);	// Data normalization
 	printf("train_x \n");
-	matrix_print(1, NUM_OF_FEATURES, train_x);
+	matrix_print(NUM_SAMPLES, NUM_OF_FEATURES, train_x);
 
+	// Random weight initialization
+	weights_random_initialization(NUM_OF_HID1_NODES, NUM_OF_FEATURES, w1);
+	weights_random_initialization(NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, w2);
+	weights_random_initialization(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, w3);
+
+	// Zero bias initialization
 	weightsB_zero_initialization(b1, NUM_OF_HID1_NODES);
-	weightsB_zero_initialization(b2, NUM_OF_OUT_NODES);
+	weightsB_zero_initialization(b2, NUM_OF_HID2_NODES);
+	weightsB_zero_initialization(b3, NUM_OF_OUT_NODES);
 
 	// Lab 3.1
-	linear_forward_nn(train_x, NUM_OF_FEATURES, z1[0], NUM_OF_HID1_NODES, w1, b1);
-	printf("Output vector (Z1_1): %f\n", z1[0][0]);
-	printf("Output vector (Z1_2): %f\n", z1[0][1]);
-	printf("Output vector (z1_3): %f\r\n", z1[0][2]);
+	for(int i=0; i<NUM_SAMPLES; ++i)
+	{
+		linear_forward_nn(train_x[i], NUM_OF_FEATURES, z1[i], NUM_OF_HID1_NODES, w1, b1);
+		printf("Output vector (Z1_1): %f\n", z1[i][0]);
+		printf("Output vector (Z1_2): %f\n", z1[i][1]);
+		printf("Output vector (Z1_3): %f\n", z1[i][2]);
+		printf("Output vector (Z1_4): %f\n", z1[i][3]);
+		printf("Output vector (Z1_5): %f\r\n", z1[i][4]);
 
-	vector_relu(z1[0],a1,NUM_OF_HID1_NODES);
-	printf("relu_a \n");
-	matrix_print(1, NUM_OF_HID1_NODES, a1);
+		vector_relu(z1[i],a1[i],NUM_OF_HID1_NODES);
+	}
+	printf("relu_a1 \n");
+	matrix_print(NUM_SAMPLES, NUM_OF_HID1_NODES, a1);
 
-	linear_forward_nn(a1, NUM_OF_HID1_NODES, z2[0], NUM_OF_OUT_NODES, w2, b2);
-	printf("Output vector (Z2): %f\r\n", z2[0][0]);
+	for(int i=0; i<NUM_SAMPLES; ++i)
+	{
+		linear_forward_nn(a1[i], NUM_OF_HID1_NODES, z2[i], NUM_OF_HID2_NODES, w2, b2);
+		printf("Output vector (Z2_1): %f\n", z2[i][0]);
+		printf("Output vector (Z2_2): %f\n", z2[i][1]);
+		printf("Output vector (Z2_3): %f\n", z2[i][2]);
+		printf("Output vector (Z2_4): %f\r\n", z2[i][3]);
+		vector_relu(z2[i],a2[i],NUM_OF_HID2_NODES);
+	}
+	printf("relu_a2 \n");
+	matrix_print(NUM_SAMPLES, NUM_OF_HID2_NODES, a2);
 
-	/*compute yhat*/
-	vector_sigmoid(z2[0],yhat[0], NUM_OF_OUT_NODES);
-	printf("yhat:  %f\n\r", yhat[0][0]);
+	for(int i=0; i<NUM_SAMPLES; ++i)
+	{
+		linear_forward_nn(a2[i], NUM_OF_HID2_NODES, z3[i], NUM_OF_OUT_NODES, w3, b3);
+		printf("Output vector (Z3): %f\r\n", z3[i][0]);
 
-	double cost = compute_cost(1, yhat, train_y);
+
+		/*compute yhat*/
+		vector_sigmoid(z3[i],yhat[i], NUM_OF_OUT_NODES);
+		printf("yhat:  %f\n\r", yhat[i][0]);
+	}
+	double cost = compute_cost(NUM_SAMPLES, yhat, train_y);
 	printf("cost:  %f\r\n", cost);
 
 	// Lab 4.1 - backpropagation
@@ -215,7 +260,6 @@ void main(void) {
 	/*compute yhat*/
 	vector_sigmoid(z2[0],yhat_eg, NUM_OF_OUT_NODES);
 	printf("predicted:  %f\n\r", yhat_eg[0]);
-	printf("here");
 
 }
 
