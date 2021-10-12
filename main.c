@@ -284,7 +284,7 @@ void main(void) {
 	}
 	/*PREDICT*/
 	printf("-------- PREDICT --------\n");
-	double input_x_eg[1][NUM_OF_FEATURES] = {{100, 100, 100}};
+	double input_x_eg[1][NUM_OF_FEATURES] = {{20, 40, 80}};
 	double input_x[1][NUM_OF_FEATURES] = {{0, 0, 0}};
 
 	normalize_data_2d(NUM_OF_FEATURES,1, input_x_eg, input_x);
