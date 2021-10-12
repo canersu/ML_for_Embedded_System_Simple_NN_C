@@ -27,7 +27,7 @@ double learning_rate=0.01;
 
 /*Input layer to hidden layer*/
 double a1[NUM_SAMPLES][NUM_OF_HID1_NODES];	// activation function
-double b1[NUM_OF_HID1_NODES];		// bias
+double b1[NUM_OF_HID1_NODES];		        // bias
 double z1[NUM_SAMPLES][NUM_OF_HID1_NODES];	// output vector
 
 // Input layer to hidden layer1 weight matrix
@@ -55,7 +55,7 @@ double yhat[NUM_SAMPLES][NUM_OF_OUT_NODES];
 double yhat_eg[NUM_OF_OUT_NODES];	// Predicted yhat
 
 // Training data
-double train_x[NUM_SAMPLES][NUM_OF_FEATURES];				// Training data after normalization
+double train_x[NUM_SAMPLES][NUM_OF_FEATURES];				                                    // Training data after normalization
 double train_y[NUM_SAMPLES][NUM_OF_OUT_NODES] = {{1},{1},{1},{0},{1},{0},{0},{0},{0},{1}};  	// The expected (training) y values
 
 
@@ -94,11 +94,6 @@ void main(void) {
 		for(int i=0; i<NUM_SAMPLES; ++i)
 		{
 			linear_forward_nn(train_x[i], NUM_OF_FEATURES, z1[i], NUM_OF_HID1_NODES, w1, b1);
-//			printf("Output vector (Z1_1): %f\n", z1[i][0]);
-//			printf("Output vector (Z1_2): %f\n", z1[i][1]);
-//			printf("Output vector (Z1_3): %f\n", z1[i][2]);
-//			printf("Output vector (Z1_4): %f\n", z1[i][3]);
-//			printf("Output vector (Z1_5): %f\r\n", z1[i][4]);
 
 			vector_relu(z1[i],a1[i],NUM_OF_HID1_NODES);
 		}
@@ -108,29 +103,23 @@ void main(void) {
 		for(int i=0; i<NUM_SAMPLES; ++i)
 		{
 			linear_forward_nn(a1[i], NUM_OF_HID1_NODES, z2[i], NUM_OF_HID2_NODES, w2, b2);
-//			printf("Output vector (Z2_1): %f\n", z2[i][0]);
-//			printf("Output vector (Z2_2): %f\n", z2[i][1]);
-//			printf("Output vector (Z2_3): %f\n", z2[i][2]);
-//			printf("Output vector (Z2_4): %f\r\n", z2[i][3]);
 			vector_relu(z2[i],a2[i],NUM_OF_HID2_NODES);
 		}
 		printf("relu_a2 \n");
 		matrix_print(NUM_SAMPLES, NUM_OF_HID2_NODES, a2);
 
+		/*compute yhat*/
 		for(int i=0; i<NUM_SAMPLES; ++i)
 		{
 			linear_forward_nn(a2[i], NUM_OF_HID2_NODES, z3[i], NUM_OF_OUT_NODES, w3, b3);
-			//printf("Output vector (Z3): %f\r\n", z3[i][0]);
-
-
-			/*compute yhat*/
 			vector_sigmoid(z3[i],yhat[i], NUM_OF_OUT_NODES);
-			//printf("yhat:  %f\n\r", yhat[i][0]);
 		}
 		double cost = compute_cost(NUM_SAMPLES, yhat, train_y);
 		printf("cost:  %f\r\n", cost);
 
-		// Lab 4.1 - backpropagation
+		// Backpropagation
+
+		// Initialize reverse layer output variables
 		double dA1[NUM_SAMPLES][NUM_OF_HID1_NODES];
 		zero_initialization(NUM_SAMPLES, NUM_OF_HID1_NODES, dA1);
 		double dA2[NUM_SAMPLES][NUM_OF_HID2_NODES];
@@ -151,12 +140,6 @@ void main(void) {
 		zero_initialization(NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, dW2);
 		double dW3[NUM_OF_OUT_NODES][NUM_OF_HID2_NODES];
 		zero_initialization(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, dW3);
-//		printf("dW1  \n");
-//		matrix_print(NUM_OF_HID1_NODES, NUM_OF_FEATURES, dW1);
-//		printf("dW2  \n");
-//		matrix_print(NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, dW2);
-//		printf("dW3  \n");
-//		matrix_print(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, dW3);
 
 		double db1[NUM_OF_HID1_NODES];
 		weightsB_zero_initialization(db1, NUM_OF_HID1_NODES);
@@ -167,24 +150,13 @@ void main(void) {
 
 		/* Output layer */
 
-		//dZ2 = A2-Y = yhat - y
-		//TODO: calculate dZ2, use matrix_matrix_sub() function
+		// Calculate dZ3
 		matrix_matrix_sub(NUM_SAMPLES, NUM_OF_OUT_NODES, yhat, train_y, dZ3);
 
 		printf("dZ3 \n");
 		matrix_print(NUM_SAMPLES, NUM_OF_OUT_NODES, dZ3);
-	//	double a2_t[NUM_OF_HID2_NODES][NUM_SAMPLES];
-	//	zero_initialization(NUM_OF_HID2_NODES, NUM_SAMPLES, a2_t);
-	//
-	//	matrix_transpose(NUM_SAMPLES, NUM_OF_HID2_NODES, a2, a2_t);
 
-
-	//	printf("a2_t  \n");
-	//	matrix_print( NUM_OF_HID2_NODES, NUM_SAMPLES, a2_t);
-
-
-		// TODO: Calculate linear backward for output layer, use linear_backward() function
-		//check for formula on slide 31 (lecture 5)
+		// Calculate linear backward for output layer
 		linear_backward(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, NUM_SAMPLES, dZ3, a2, dW3, db3);
 
 		printf("dW3 \n");
@@ -193,59 +165,37 @@ void main(void) {
 		printf("db3 \n");
 		matrix_print(NUM_OF_OUT_NODES, 1, db3);
 
-
-
-
-		double W3_T[NUM_OF_HID2_NODES][NUM_OF_OUT_NODES];
-		zero_initialization(NUM_OF_HID2_NODES, NUM_OF_OUT_NODES, W3_T);
-
 		printf("dZ3 \n");
 		matrix_print(NUM_SAMPLES, NUM_OF_OUT_NODES, dZ3);
-		// TODO: Make matrix transpose for output layer, use matrix_transpose() function
-		matrix_transpose(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, w3, W3_T);
 
+
+		// Define and initialize W3 transpose
+		double W3_T[NUM_OF_HID2_NODES][NUM_OF_OUT_NODES];
+		zero_initialization(NUM_OF_HID2_NODES, NUM_OF_OUT_NODES, W3_T);
+		matrix_transpose(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, w3, W3_T);
 		printf("W3_T \n");
 		matrix_print(NUM_OF_HID2_NODES, NUM_OF_OUT_NODES, W3_T);
 
-
-
-		// TODO: Make matrix matrix multiplication; use matrix_matrix_multiplication() function
-		// Check for formula on slide 31 (lecture 5)
+		// Make matrix matrix multiplication
 		for(int i=0; i<NUM_SAMPLES; ++i)
 		{
-			//matrix_vector_multiplication(NUM_OF_HID2_NODES, NUM_OF_OUT_NODES, NUM_OF_OUT_NODES, W3_T, dZ3[i], dA2[i]);
 			matrix_vector_multiplication(dZ3[i], NUM_OF_OUT_NODES, dA2[i], NUM_OF_HID2_NODES, W3_T);
-			//printf("dA2: %f\n",dZ3[i]);
 		}
-
-		//relu_backward(1, NUM_OF_HID1_NODES, dA1, z1, dZ1);
-
 
 		printf("dA2 \n");
 		matrix_print(NUM_SAMPLES, NUM_OF_HID2_NODES, dA2);
 
 		/* Input layer */
 
-		// TODO: Calculate relu backward for hidden layer, use relu_backward() function
-		// Check for formula on slide 31 (lecture 5)
+		// Calculate relu backward for hidden layer, use relu_backward() function
 		relu_backward(NUM_SAMPLES, NUM_OF_HID2_NODES, dA2, z2, dZ2);
 
 
 		printf("dZ2 \n");
 		matrix_print(NUM_SAMPLES, NUM_OF_HID2_NODES, dZ2);
 
-		// TODO: Calculate linear backward for hidden layer, use linear_backward() function
-		// Check for formula on slide 31 (lecture 5)
-	//	double a1_t[NUM_OF_HID1_NODES][NUM_SAMPLES];
-	//	zero_initialization(NUM_OF_HID1_NODES, NUM_SAMPLES, a1_t);
-	//
-	//	matrix_transpose(NUM_SAMPLES, NUM_OF_HID1_NODES, a1, a1_t);
-		//linear_backward(NUM_OF_HID1_NODES, NUM_OF_FEATURES, 1, dZ1, a0_t, dW1, db1);
+        // Calculate linear backward for hidden layer, use linear_backward() function
 		linear_backward(NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, NUM_SAMPLES, dZ2, a1, dW2, db2);
-
-
-	//	printf("a1_t  \n");
-	//	matrix_print(NUM_OF_HID1_NODES, NUM_SAMPLES, a1_t);
 
 
 		printf("dW2  \n");
@@ -254,9 +204,7 @@ void main(void) {
 		printf("dZ2 \n");
 		matrix_print(NUM_SAMPLES, NUM_OF_HID2_NODES, dZ2);
 
-
-
-
+		// Define and initialize W2 transpose
 		double W2_T[NUM_OF_HID1_NODES][NUM_OF_HID2_NODES];
 		zero_initialization(NUM_OF_HID1_NODES, NUM_OF_HID2_NODES, W2_T);
 		matrix_transpose(NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, w2, W2_T);
@@ -266,10 +214,6 @@ void main(void) {
 		for(int i=0; i<NUM_SAMPLES; ++i)
 		{
 			matrix_vector_multiplication(dZ2[i], NUM_OF_HID2_NODES, dA1[i], NUM_OF_HID1_NODES, W2_T);
-//			printf("dZ2 iters %d \n",i);
-//			matrix_print(1, NUM_OF_HID2_NODES, dZ2[i]);
-//			printf("dA1 iters %d \n",i);
-//			matrix_print(1, NUM_OF_HID1_NODES, dA1[i]);
 		}
 
 
@@ -291,6 +235,7 @@ void main(void) {
 		printf("dW1  \n");
 		matrix_print(NUM_OF_HID1_NODES, NUM_OF_FEATURES, dW1);
 
+		// Define and initialize W1 transpose
 		double W1_T[NUM_OF_FEATURES][NUM_OF_HID1_NODES];
 		zero_initialization(NUM_OF_FEATURES, NUM_OF_HID1_NODES, W1_T);
 		matrix_transpose(NUM_OF_HID1_NODES, NUM_OF_FEATURES, w1, W1_T);
@@ -302,52 +247,36 @@ void main(void) {
 			matrix_vector_multiplication(dZ1[i], NUM_OF_HID1_NODES, train_x[i], NUM_OF_FEATURES, W1_T);
 		}
 
-
 		/*UPDATE PARAMETERS*/
 
 		// W1 = W1 - learning_rate * dW1
-		// TODO: update weights for W1, use weights_update() function
 		weights_update(NUM_OF_HID1_NODES, NUM_OF_FEATURES, learning_rate, dW1, w1);
 
 		printf("updated W1  \n");
 		matrix_print( NUM_OF_HID1_NODES, NUM_OF_FEATURES, w1);
 
 		// b1 = b1 - learning_rate * db1
-		// TODO: update bias for b1, use weights_update() function
 		weights_update(NUM_OF_HID1_NODES, 1, learning_rate, db1, b1);
-
-
 		printf("updated b1  \n");
 		matrix_print(NUM_OF_HID1_NODES, 1, b1);
 
 		// W2 = W2 - learning_rate * dW2
-		// TODO: update weights for W2, use weights_update() function
 		weights_update(NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, learning_rate, dW2, w2);
-
 		printf("updated W2  \n");
 		matrix_print( NUM_OF_HID2_NODES, NUM_OF_HID1_NODES, w2);
 
 		// b2 = b2 - learning_rate * db2
-		// TODO: update bias for b2, use weights_update() function
 		weights_update(NUM_OF_HID1_NODES, 1, learning_rate, db2, b2);
-
-
 		printf("updated b2  \n");
 		matrix_print(NUM_OF_HID2_NODES, 1, b2);
 
 		// W3 = W3 - learning_rate * dW3
-		// TODO: update weights for W3, use weights_update() function
 		weights_update(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, learning_rate, dW3, w3);
-
 		printf("updated W3  \n");
 		matrix_print( NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, w3);
 
-
 		// b2 = b2 - learning_rate * db2
-		// TODO: update bias for b2, use weights_update() function
 		weights_update(NUM_OF_OUT_NODES, NUM_OF_HID2_NODES, learning_rate, db3, b3);
-
-
 		printf("updated b3  \n");
 		matrix_print(NUM_OF_OUT_NODES, 1, b3);
 
@@ -361,10 +290,6 @@ void main(void) {
 	normalize_data_2d(NUM_OF_FEATURES,1, input_x_eg, input_x);
 	printf("input_x \n");
 	matrix_print(1, NUM_OF_FEATURES, input_x);
-
-//	normalize_data_2d(NUM_OF_FEATURES,NUM_SAMPLES, raw_x, train_x);	// Data normalization
-//	printf("train_x \n");
-//	matrix_print(NUM_SAMPLES, NUM_OF_FEATURES, train_x);
 
 	/*compute z1*/
 	linear_forward_nn(input_x[0], NUM_OF_FEATURES, z1[0], NUM_OF_HID1_NODES, w1, b1);
