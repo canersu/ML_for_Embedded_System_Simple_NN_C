@@ -43,12 +43,16 @@ void single_input_multiple_output_nn(double input_scalar, double *weight_vector,
 void matrix_vector_multiplication(double * input_vector, uint32_t INPUT_LEN, double * output_vector,
 		uint32_t OUTPUT_LEN, double weights_matrix[OUTPUT_LEN][INPUT_LEN]) {
 	// TODO: Use two for loops to calculate output vector based on the input vector and weights matrix
+	double row_tot;
+
 	for(int i=0; i< OUTPUT_LEN; ++i)
 	{
+		row_tot = 0.0;
 		for(int j=0; j<INPUT_LEN; ++j)
 		{
-			output_vector[i] += weights_matrix[i][j]* input_vector[j];
+			row_tot += weights_matrix[i][j]*input_vector[j];
 		}
+		output_vector[i] = row_tot;
 	}
 }
 
@@ -155,7 +159,7 @@ double compute_cost(uint32_t m, double yhat[m][1], double y[m][1]) {
 	for(int i=0; i<m; ++i)
 	{
 		cost += ((y[i][0]*log(yhat[i][0])) + ((1-y[i][0])*(log(1-yhat[i][0]))));
-		printf("cost function %d is %f \n", i,cost);
+		//printf("cost function %d is %f \n", i,cost);
 	}
 	cost = -1*cost/m;
 
@@ -210,6 +214,16 @@ void weights_random_initialization(uint32_t HIDDEN_LEN, uint32_t INPUT_LEN, doub
 }
 
 
+void zero_initialization(uint32_t HIDDEN_LEN, uint32_t INPUT_LEN, double weight_matrix[HIDDEN_LEN][INPUT_LEN]) {
+	memset(weight_matrix, 0, sizeof(weight_matrix));
+	for (int i = 0; i < HIDDEN_LEN; i++) {
+		for (int j = 0; j < INPUT_LEN; j++) {
+			weight_matrix[i][j] = 0;
+		}
+	}
+}
+
+
 void weightsB_zero_initialization(double * weightsB, uint32_t LEN){
 	memset(weightsB, 0, LEN*sizeof(weightsB[0]));
 }
@@ -218,21 +232,22 @@ void weightsB_zero_initialization(double * weightsB, uint32_t LEN){
 void relu_backward(uint32_t m, uint32_t LAYER_LEN, double dA[m][LAYER_LEN], double Z[m][LAYER_LEN], double dZ[m][LAYER_LEN]) {
 	//TODO: implement derivative of relu function  You can can choose either to calculate for all example at the same time
 	//or make iteratively. Check formula for derivative lecture 5 on slide 24
-	//elementwise_multiple( double input_scalar, double *weight_vector, double *output_vector, double VECTOR_LEN)
-//	if(dZ[m][LAYER_LEN] < 0){elementwise_multiple(1, dA, dZ, LAYER_LEN);}
-//	else{elementwise_multiple(0, dA, dZ, LAYER_LEN);}
-	elementwise_multiple(1, dA, dZ, LAYER_LEN);
 	for(int i=0; i<m; ++i)
 	{
 		for(int j=0; j<LAYER_LEN; ++j)
 		{
-			if(Z[i][j] <= 0)
+			if(dA[i][j] >= 0)
 			{
-				dZ[i][j] = 0;
+				//dZ[i][j] = 0;
+				elementwise_multiple(1, dA[i], dZ[i], LAYER_LEN);
+				// printf("zero %d\n",i);
+			}
+			else{
+				elementwise_multiple(0, dA[i], dZ[i], LAYER_LEN);
+				// printf("one %d\n",i);
 			}
 		}
 	}
-	//elementwise_multiple(1, dA, dZ, LAYER_LEN);
 }
 
 
@@ -240,27 +255,69 @@ void linear_backward(uint32_t LAYER_LEN, uint32_t PREV_LAYER_LEN, uint32_t m, do
 		double A_prev[m][PREV_LAYER_LEN], double dW[LAYER_LEN][PREV_LAYER_LEN], double * db ){
 	// TODO: implement linear backward. You can can choose either to calculate for all example at the same time (dw= 1/m *A_prev[T]*dZ;)
 	//or make iteratively  (dw_iter= A_prev[T]*dZ;)
-//	double tot = 0.0;
-//	for(int i=0; i<LAYER_LEN; ++i)
-//	{
-//		tot += db[m][i];
-//	}
-	matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, (double) 1/m, dZ, db);
-	//matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, 1/m, A_prev, A_prev);
-	matrix_matrix_multiplication(LAYER_LEN, 1, PREV_LAYER_LEN, dZ, A_prev, dW);
-	//matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, 0.33, dZ, dZ);
+	double tot = 0.0;
+	for(int i=0; i<m; ++i)
+	{
+		for(int j=0; j<LAYER_LEN; ++j)
+		{
+			tot += dZ[i][j];
+			db[j] = (double) 1/m*tot;
+		}
+	}
+
+	//double dw_tot[LAYER_LEN][PREV_LAYER_LEN];
+	//zero_initialization(LAYER_LEN, PREV_LAYER_LEN, dW);
+	double a_prev_t[PREV_LAYER_LEN][1];
+	zero_initialization(PREV_LAYER_LEN, 1, a_prev_t);
+
+
+	for(int i=0; i<m; ++i)
+	{
+
+		double dw_iter[LAYER_LEN][PREV_LAYER_LEN];
+		zero_initialization(LAYER_LEN, PREV_LAYER_LEN, dw_iter);
+		//A_prev[m][PREV_LAYER_LEN];
+		matrix_transpose(1, PREV_LAYER_LEN, A_prev[i], a_prev_t);
+
+//		printf("train trans  \n");
+//		matrix_print( PREV_LAYER_LEN, 1, a_prev_t);
+		// matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, (double) 1/m, dZ, db);
+		// matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, 1/m, A_prev, A_prev);
+		matrix_matrix_multiplication(LAYER_LEN, 1, PREV_LAYER_LEN, dZ[i], a_prev_t, dw_iter);
+
+//		printf("dz iter  \n");
+//		matrix_print( 1, LAYER_LEN, dZ[i]);
+//
+//		printf("dw iter  \n");
+//		matrix_print( LAYER_LEN, PREV_LAYER_LEN, dw_iter);
+//
+//		printf("dW  \n");
+//		matrix_print( LAYER_LEN, PREV_LAYER_LEN, dW);
+
+		//matrix_divide_scalar(LAYER_LEN, PREV_LAYER_LEN, m, dw_iter, dw_iter);
+		matrix_multiply_scalar(LAYER_LEN, PREV_LAYER_LEN, (double) 1/m, dw_iter, dw_iter);
+		matrix_matrix_sum(LAYER_LEN, PREV_LAYER_LEN, dw_iter, dW, dW);
+
+		// matrix_multiply_scalar(LAYER_LEN, LAYER_LEN, 0.33, dZ, dZ);
+	}
 }
 
 
 void matrix_matrix_sum(uint32_t MATRIX_ROW, uint32_t MATRIX_COL,
 									double input_matrix1[MATRIX_ROW][MATRIX_COL],
-									double input_matrix2[MATRIX_COL][MATRIX_COL],
+									double input_matrix2[MATRIX_ROW][MATRIX_COL],
 									double output_matrix[MATRIX_ROW][MATRIX_COL]) {
-	for (int c = 0; c < MATRIX_ROW; c++) {
-	      for (int d = 0; d < MATRIX_COL; d++) {
+	for (int c = 0; c < MATRIX_ROW; ++c) {
+	      for (int d = 0; d < MATRIX_COL; ++d) {
 	        output_matrix[c][d] = input_matrix1[c][d]+input_matrix2[c][d];
 	      }
 	 }
+//	printf("in1  \n");
+//	matrix_print( MATRIX_ROW, MATRIX_COL, input_matrix1);
+//	printf("in2  \n");
+//	matrix_print( MATRIX_ROW, MATRIX_COL, input_matrix2);
+//	printf("out  \n");
+//	matrix_print( MATRIX_ROW, MATRIX_COL, output_matrix);
 }
 
 
